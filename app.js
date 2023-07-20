@@ -1,79 +1,60 @@
-const express = require ("express");
-const fs = require ("fs/promises");
-const http = require ("http")
-const path = require ("path")
-const handlebars = require ("express-handlebars")
-const {Server} = require("socket.io")
+const express = require("express");
+const fs = require("fs/promises");
+const http = require("http");
+const path = require("path");
+const handlebars = require("express-handlebars");
+const { Server } = require("socket.io");
 
-const Routes = require ("./routes/index.js");
-const ProductManager = require ("./managers/ProductManager.js")
-const productManager = new ProductManager ("productos.json")
+const Routes = require("./routes/index.js");
+const ProductManager = require("./managers/ProductManager.js");
+const productManager = new ProductManager("productos.json");
+const filePath = path.join(__dirname, "data", "realTimesProducts.json");
+
 
 const app = express();
-const server = http.createServer(app)
-const io = new Server(server)
+const server = http.createServer(app);
+const io = new Server(server);
 
 app.engine("handlebars", handlebars.engine());
-app.set("views", path.join(__dirname,"/views"))
-app.set("view engine", "handlebars")
+app.set("views", path.join(__dirname, "/views"));
+app.set("view engine", "handlebars");
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use ("/public", express.static(path.join(__dirname + "/public")))
+app.use("/public", express.static(path.join(__dirname + "/public")));
 
-app.use("/", Routes.home)
+app.use("/", Routes.home);
 
-
-app.post('/:cid/product/:pid', async (req, res) => {
-  const cid = req.params.cid;
-  const pid = req.params.pid;
-
+app.get("/realTimesProducts", async (req, res) => {
   try {
-    let data = await fs.readFile('products.json', 'utf-8');
-    let cartList = JSON.parse(data);
+    const data = await fs.readFile(path.join(__dirname, "data", "realTimesProducts.json"), "utf-8");
+    const realTimesProducts = JSON.parse(data);
 
-    const cartIndex = cartList.findIndex((item) => item.cid === cid);
-
-    if (cartIndex !== -1) {
-      const cart = cartList[cartIndex];
-      const existingProduct = cart.products.find((item) => item.product === pid);
-
-      const newProductId = cart.products.length + 1;
-      const newProduct = { id: newProductId, product: pid, quantity: 1 };
-      cart.products.push(newProduct);
-    } else {
-  
-      const newProduct = { id: 1, product: pid, quantity: 1 };
-      const newCart = { cid, products: [newProduct] };
-      cartList.push(newCart);
-    }
-
-    data = JSON.stringify(cartList, null, 2);
-    await fs.writeFile('products.json', data, 'utf-8');
-
-    res.json(cartList);
+    res.render("realTimesProducts", { realTimesProducts });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al agregar el producto al carrito' });
+    console.error("Error al leer el archivo", error);
+    res.status(500).json({ error: "Error al obtener la lista de productos" });
   }
 });
 
-io.on("connection", (socket)=>{
+
+
+io.on("connection", (socket) => {
   console.log(`usuario conectado ${socket.id}`);
 
-  socket.on("disconnect", ()=>{
+  socket.on("disconnect", () => {
     console.log("usuario desconectdo");
-  })
+  });
 
-  socket.on("event", (saludo)=>{
+  socket.on("event", (saludo) => {
     console.log(saludo);
-    socket.emit("evento", "hola desde el server")
-  })
+    socket.emit("evento", "hola desde el server");
+  });
+
   
-})
+});
 
 const port = 8080;
 server.listen(port, () => {
   console.log(`Servidor Express escuchando en http://localhost:${port}`);
 });
-

@@ -1,0 +1,58 @@
+<div id="realTimesProducts" class="uk-child-width-1-4@m" uk-grid>
+  <h1>Productos</h1>
+
+  <form id="createProductForm">
+    <label for="productName">Nombre del producto:</label>
+    <input type="text" id="productName" required>
+    <label for="productPrice">Precio:</label>
+    <input type="number" id="productPrice" required>
+    <button type="submit">Crear Producto</button>
+  </form>
+
+  <ul id="productList">
+  {{#each realTimesProducts}}
+  <li>Nombre: {{this.name}}, Precio: ${{this.price}}</li>
+  {{/each}}
+</ul>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+  const socket = io();
+
+  function addProductToList(product) {
+    const productListElement = document.getElementById('productList');
+    const listItem = document.createElement('li');
+    listItem.textContent = `Nombre: ${product.name}, Precio: $${product.price}`;
+    productListElement.appendChild(listItem);
+  }
+
+  function removeProductFromList(productId) {
+    const productListElement = document.getElementById('productList');
+    const listItem = productListElement.querySelector(`[data-product-id="${productId}"]`);
+    if (listItem) {
+      productListElement.removeChild(listItem);
+    }
+  }
+
+  socket.on('initialProducts', (productList) => {
+    const productListElement = document.getElementById('productList');
+    productListElement.innerHTML = ''; // Limpiar la lista antes de agregar los productos actualizados
+    productList.forEach((product) => {
+      addProductToList(product);
+    });
+  });
+
+  socket.on('newProductCreated', (newProduct) => {
+    addProductToList(newProduct);
+  });
+
+  socket.on('productDeleted', (productId) => {
+    removeProductFromList(productId);
+  });
+
+  // Resto del código de eventos...
+</script>
+</div>
+
+
+</div>
