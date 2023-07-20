@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" href="/static/css/style.css" type="text/css">
+    <link rel="stylesheet" href="/public/css/style.css" type="text/css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css" type="text/css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" type="text/css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.11.1/dist/css/uikit.min.css" type="text/css">
-        <link rel="stylesheet" href="/static/css/{{style}}.css" type="text/css">
+        <link rel="stylesheet" href="/public/css/{{style}}.css" type="text/css">
   </head>
   <body>
     <div class="uk-container uk-width-1-1 uk-padding-remove uk-margin-remove">
@@ -29,6 +29,8 @@
         {{{body}}}
       </div>
     </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/public/js/indice.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.11.1/dist/js/uikit.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.11.1/dist/js/uikit-icons.min.js"></script>
   </body>

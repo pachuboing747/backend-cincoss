@@ -18,5 +18,5 @@ home.use("/", HomeRoutes)
 
 module.exports = {
     api, 
-    home
+    home,
 };

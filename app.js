@@ -1,10 +1,17 @@
 const express = require ("express");
 const fs = require ("fs/promises");
-const Routes = require ("./routes/index.js");
+const http = require ("http")
 const path = require ("path")
 const handlebars = require ("express-handlebars")
+const {Server} = require("socket.io")
+
+const Routes = require ("./routes/index.js");
+const ProductManager = require ("./managers/ProductManager.js")
+const productManager = new ProductManager ("productos.json")
 
 const app = express();
+const server = http.createServer(app)
+const io = new Server(server)
 
 app.engine("handlebars", handlebars.engine());
 app.set("views", path.join(__dirname,"/views"))
@@ -12,7 +19,7 @@ app.set("view engine", "handlebars")
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use ("/static", express.static(path.join(__dirname + "/public")))
+app.use ("/public", express.static(path.join(__dirname + "/public")))
 
 app.use("/", Routes.home)
 
@@ -51,8 +58,22 @@ app.post('/:cid/product/:pid', async (req, res) => {
   }
 });
 
+io.on("connection", (socket)=>{
+  console.log(`usuario conectado ${socket.id}`);
+
+  socket.on("disconnect", ()=>{
+    console.log("usuario desconectdo");
+  })
+
+  socket.on("event", (saludo)=>{
+    console.log(saludo);
+    socket.emit("evento", "hola desde el server")
+  })
+  
+})
+
 const port = 8080;
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Servidor Express escuchando en http://localhost:${port}`);
 });
 

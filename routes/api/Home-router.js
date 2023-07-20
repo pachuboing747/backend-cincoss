@@ -7,7 +7,7 @@ const cartsManager = new CartsManager("cart.json")
 const router = Router()
 
 router.get("/", async (req, res)=>{
-    // res.sendFile(path.join(__dirname, "../../public/index.html"))
+
     const products = await productManager.getProducts()
     res.render("home", {
         title: "Dario",
@@ -18,7 +18,7 @@ router.get("/", async (req, res)=>{
 })
 
 router.get("/carrito", async(req, res)=>{
-    // res.sendFile(path.join(__dirname, "../../public/carrito.html"))
+
     const carrito = await cartsManager.getProducts()
     res.render("carrito", {
         title: "Victoria",
@@ -27,10 +27,11 @@ router.get("/carrito", async(req, res)=>{
     })
 })
 
-router.get("/realtimesProducts", (req, res)=>{
-    // res.sendFile(path.join(__dirname, "../../public/carrito.html"))
+router.get("/realtimesProducts", async (req, res)=>{
+    const realtimesProducts = await productManager.getProducts()
     res.render("realTimeProducts", {
         title: "Leon",
+        realtimesProducts,
         style: "carrito"
     })
 })
