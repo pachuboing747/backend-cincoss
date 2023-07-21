@@ -5,9 +5,11 @@ const ProductManager = require("../../managers/ProductManager");
 const productManager = new ProductManager("productos.json")
 const CartsManager = require ("../../managers/CartsManager")
 const cartsManager = new CartsManager("cart.json")
-const filePath = path.join(__dirname, "data", "realTimesProducts.json");
+const RealTime = require ("../../managers/realTimesProducts")
+const realTimeManager = new RealTime("realTimesProducts.json")
 
 const router = Router()
+
 
 
 router.get("/", async (req, res)=>{
@@ -30,6 +32,30 @@ router.get("/carrito", async(req, res)=>{
         style: "carrito"
     })
 })
+
+router.get("/realTimesProducts", async(req, res)=>{
+
+    const realTimesProducts = await realTimeManager.getProducts()
+    res.render("realTimesProducts", {
+        title: "RealTimesProducts",
+        realTimesProducts,
+        style: "carrito"
+    })
+    
+})
+router.post("/addProduct", async (req, res) => {
+    const newProduct = req.body; 
+    await realTimeManager.addProduct(newProduct); 
+    res.redirect("/realTimesProducts");  
+});
+
+router.post("/deleteProduct", async (req, res) => {
+    const productId = req.body.productId; 
+    await realTimeManager.deleteProduct(productId); 
+    res.redirect("/realTimesProducts"); 
+});
+
+
 
 
   

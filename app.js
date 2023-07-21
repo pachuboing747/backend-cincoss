@@ -51,6 +51,14 @@ io.on("connection", (socket) => {
     socket.emit("evento", "hola desde el server");
   });
 
+  socket.on("productAdded", () => {
+    io.emit("realTimesProducts", realTime.getProducts());
+  });
+
+  socket.on("productsDeleted", () => {
+    io.emit("realTimesProducts", []);
+  });
+
   
 });
 
