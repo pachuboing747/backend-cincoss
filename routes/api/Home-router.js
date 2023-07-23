@@ -14,7 +14,7 @@ const router = Router()
 
 router.get("/", async (req, res)=>{
 
-    const products = await productManager.getProducts()
+    const products = await productManager.getAll()
     res.render("home", {
         title: "Productos",
         products,
@@ -25,7 +25,7 @@ router.get("/", async (req, res)=>{
 
 router.get("/carrito", async(req, res)=>{
 
-    const carrito = await cartsManager.getProducts()
+    const carrito = await cartsManager.getAll()
     res.render("carrito", {
         title: "Carrito",
         carrito,

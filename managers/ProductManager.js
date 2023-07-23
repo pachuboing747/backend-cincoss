@@ -2,101 +2,92 @@ const fs = require("fs").promises;
 const path = require("path");
 
 class ProductManager {
+  #products = [];
+
   constructor(filename) {
     this.filename = filename;
-    this.filePath = path.join(__dirname, "../data", this.filename);
+    this.filepath = path.join(__dirname, "../data", this.filename);
   }
 
-  async addProduct(prod) {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
+  #readFile = async () => {
+    const data = await fs.readFile(this.filepath, "utf-8");
 
-    if (!Array.isArray(items)) {
-      items = [];
+    if (data == "") {
+      this.#products = [
+        "El archivo se encuentra vacío, por favor, ingrese un producto",
+      ];
+    } else {
+      this.#products = JSON.parse(data);
     }
+  };
 
-    const newItemId = items.length > 0 ? items[items.length - 1].id + 1 : 1;
+  #writeFile = async () => {
+    const data = JSON.stringify(this.#products, null, 2);
+    await fs.writeFile(this.filepath, data);
+  };
 
-    const isDuplicate = items.some((item) => item.id === newItemId);
-    if (isDuplicate) {
-      throw new Error("El producto ya existe.");
-    }
+  async getAll() {
+    await this.#readFile();
 
-    items.push({
-      ...prod,
-      id: newItemId,
-    });
-
-    await fs.writeFile(this.filePath, JSON.stringify(items, null, 2));
+    return this.#products;
   }
 
-  async getProducts() {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
+  async getById(id) {
+    await this.#readFile();
 
-    if (!Array.isArray(items)) {
-      items = [];
-    }
-
-    return items;
+    return this.#products.find((p) => p.id == id);
   }
 
-  async getProductById(id) {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
+  async create(product) {
+    await this.#readFile();
 
-    if (!Array.isArray(items)) {
-      items = [];
+    const id = (this.#products[this.#products.length - 1]?.id || 0) + 1;
+
+    const newProduct = {
+      id,
+      ...product,
+    };
+
+    if (
+      this.#products[0] ==
+      "El archivo se encuentra vacío, por favor, ingrese un producto"
+    ) {
+      this.#products.pop();
     }
 
-    const product = items.find((p) => p.id === parseInt(id));
-    if (!product) {
-      throw new Error("Producto no encontrado.");
-    }
+    this.#products.push(newProduct);
 
-    return product;
+    await this.#writeFile();
+
+    return newProduct;
   }
 
-  async updateProduct(id, updatedFields) {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
+  async save(id, producto) {
+    await this.#readFile();
 
-    if (!Array.isArray(items)) {
-      items = [];
+    const existing = await this.getById(id);
+
+    if (!existing) {
+      return;
     }
 
-    const index = items.findIndex((p) => p.id === id);
+    const { title, description, stock, price, keywords } = producto;
 
-    if (index !== -1) {
-      items[index] = {
-        ...items[index],
-        ...updatedFields,
-      };
+    existing.title = title;
+    existing.description = description;
+    existing.stock = stock;
+    existing.price = price;
+    existing.keywords = keywords;
 
-      await fs.writeFile(this.filePath, JSON.stringify(items, null, 2));
-      return true;
-    }
-
-    return false;
+    await this.#writeFile();
   }
 
-  async deleteProduct(id) {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
+  async delete(id) {
+    await this.#readFile();
 
-    if (!Array.isArray(items)) {
-      items = [];
-    }
+    this.#products = this.#products.filter((p) => p.id != id);
 
-    const index = items.findIndex((p) => p.id === id);
-
-    if (index === -1) {
-      throw new Error("Producto no encontrado.");
-    }
-
-    const updatedItems = items.filter((p) => p.id !== id);
-
-    await fs.writeFile(this.filePath, JSON.stringify(updatedItems, null, 2));
+    await this.#writeFile();
   }
 }
 

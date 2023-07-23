@@ -1,89 +1,81 @@
-const { Router } = require("express");
+const { Router } = require("express")
 const fs = require("fs/promises");
-const CartsManager = require ("../../managers/CartsManager.js");
+
+const CartsManager = require("../../managers/CartsManager.js");
+const ProductManager = require ( "../../managers/ProductManager.js");
+
 
 const cartManager = new CartsManager("cart.json");
+const productManager = new ProductManager("productos.json");
+
 const router = Router();
 
-// /api/carts
-router.get("/", async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit);
-    let productsToSend = await cartManager.getProducts();
-
-    if (!isNaN(limit) && limit > 0) {
-      productsToSend = productsToSend.slice(0, limit);
-    }
-
-    res.status(200).json(productsToSend);
-  } catch (error) {
-    res.status(500).json({ error: "Error al obtener los productos del carrito" });
-  }
-});
-
-// /api/carts
-router.post("/", async (req, res) => {
-  try {
-    const cartData = await fs.readFile("./data/cart.json", "utf8");
-    let cart = JSON.parse(cartData);
-
-    if (!Array.isArray(cart)) {
-      cart = [];
-    }
-
-    const newItemId = cart.length > 0 ? cart[cart.length - 1].id + 1 : 1;
-
-    const isDuplicate = cart.some((item) => item.id === newItemId);
-    if (isDuplicate) {
-      throw new Error("El producto ya existe.");
-    }
-
-    const productToAdd = {
-      id: newItemId,
-      title: "Nike Zoom Mercurial Superfly 9 Academy MG",
-      description:
-        "Cuenta con una unidad Zoom Air y con una NikeSkin flexible en la parte superior para brindar un toque excepcional, de modo que puedas dominar en los últimos y más importantes minutos de un partido.",
-      price: 49900,
-      thumbnail:
-        "https://nikearprod.vtexassets.com/arquivos/ids/452821/DJ5625_001_A_PREM.jpg?v=638149287879500000",
-      code: "GW1022",
-      stock: 15,
-      category: "Zapatillas",
-      status: true,
-    };
-
-    cart.push(productToAdd);
-
-    await fs.writeFile("./data/cart.json", JSON.stringify(cart, null, 2), "utf8");
-
-    res
-      .status(201)
-      .json({ message: "Producto agregado al carrito correctamente", product: productToAdd });
-  } catch (error) {
-    res.status(500).json({ error: "Error al agregar el producto al carrito" });
-  }
-});
-
-// /api/carts/:cid
 router.get("/:cid", async (req, res) => {
-  try {
-    const cartId = parseInt(req.params.cid);
+  const id = parseInt(req.params.cid);
+  const cart = await cartManager.getById(id);
 
-    const cartData = await fs.readFile("./data/cart.json", "utf8");
-
-    const cart = JSON.parse(cartData);
-
-    const targetCart = cart.find((item) => item.id === cartId);
-
-    if (!targetCart) {
-      res.status(404).json({ message: "Carrito no encontrado" });
-      return;
-    }
-
-    res.status(200).json({ cart: targetCart });
-  } catch (error) {
-    res.status(500).json({ error: "Error al obtener los productos del carrito" });
+  if (!cart) {
+    res.status(404).send("No se encuentra un carrito de compras con el identificador proporcionado");
+    return;
+  } else if (cart.products.length === 0) {
+    res.status(201).send("Este carrito no contiene productos seleccionados");
+  } else {
+    res.status(201).send(cart.products);
   }
 });
+
+router.get("/", async (req, res) => {
+  const carts = await cartManager.getAll();
+  res.send(carts);
+});
+
+router.post("/", async (req, res) => {
+  const { body } = req;
+  const cart = await cartManager.create(body);
+  res.status(201).send(cart);
+});
+
+router.post('/:cid/product/:pid', async (req, res) => {
+  const cid = req.params.cid;
+  const pid = req.params.pid;
+
+  try {
+    let data = await fs.readFile('./data/cart.json', 'utf-8');
+    let cartList = JSON.parse(data);
+
+    const cartIndex = cartList.findIndex((item) => item.cid === cid);
+
+    if (cartIndex !== -1) {
+      const cart = cartList[cartIndex];
+      const existingProductIndex = cart.products.findIndex((item) => item.product === pid);
+
+      if (existingProductIndex !== -1) {
+      
+        cart.products[existingProductIndex].quantity++;
+      } else {
+        
+        const newProductId = cart.products.length + 1;
+        const newProduct = { id: newProductId, product: pid, quantity: 1 };
+        cart.products.push(newProduct);
+      }
+    } else {
+    
+      const newProduct = { id: 1, product: pid, quantity: 1 };
+      const newCart = { cid, products: [newProduct] };
+      cartList.push(newCart);
+    }
+
+    data = JSON.stringify(cartList, null, 2);
+    await fs.writeFile('./data/cart.json', data, 'utf-8');
+
+    res.json(cartList);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al agregar el producto al carrito' });
+  }
+});
+
+
+
 
 module.exports = router;

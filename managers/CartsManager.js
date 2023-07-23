@@ -1,102 +1,106 @@
-const fs = require("fs").promises;
+const fs = require("fs/promises");
 const path = require("path");
 
+
 class CartsManager {
+  #carts = [];
+
   constructor(filename) {
     this.filename = filename;
-    this.filePath = path.join(__dirname, "../data", this.filename);
+    this.filepath = path.join(__dirname, "../data", this.filename);
   }
 
-  async addProduct(prod) {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
-
-    if (!Array.isArray(items)) {
-      items = [];
+  #readFile = async () => {
+    try {
+      const data = await fs.readFile(this.filepath, "utf-8");
+      if (data == "") {
+        this.#carts = [];
+      } else {
+        this.#carts = JSON.parse(data);
+      }
+    } catch (e) {
+      this.#carts = [];
     }
+  };
 
-    const newItemId = items.length > 0 ? items[items.length - 1].id + 1 : 1;
+  #writeFile = async () => {
+    const data = JSON.stringify(this.#carts, null, 2);
+    await fs.writeFile(this.filepath, data);
+  };
 
-    const isDuplicate = items.some((item) => item.id === newItemId);
-    if (isDuplicate) {
-      throw new Error("El producto ya existe.");
-    }
+  async getById(id) {
+    await this.#readFile();
 
-    items.push({
-      ...prod,
-      id: newItemId,
-    });
-
-    await fs.writeFile(this.filePath, JSON.stringify(items, null, 2));
+    return this.#carts.find((c) => c.id == id);
   }
 
-  async getProducts() {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
+  async create(carts) {
+    await this.#readFile();
 
-    if (!Array.isArray(items)) {
-      items = [];
-    }
+    const id = (this.#carts[this.#carts.length - 1]?.id || 0) + 1;
 
-    return items;
+    const newcarts = {
+      id,
+      ...carts,
+      products: [],
+    };
+
+    this.#carts.push(newcarts);
+
+    await this.#writeFile();
+
+    return newcarts;
   }
 
-  async getProductById(id) {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
-
-    if (!Array.isArray(items)) {
-      items = [];
-    }
-
-    const product = items.find((p) => p.id === parseInt(id));
-    if (!product) {
-      throw new Error("Producto no encontrado.");
-    }
-
-    return product;
+  async existInCart(cart, productId) {
+    return cart.products.find((p) => p.product == productId);
   }
 
-  async updateProduct(id, updatedFields) {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
-
-    if (!Array.isArray(items)) {
-      items = [];
-    }
-
-    const index = items.findIndex((p) => p.id === id);
-
-    if (index !== -1) {
-      items[index] = {
-        ...items[index],
-        ...updatedFields,
+  async createProduct(carts, productId, cantidad) {
+    await this.#readFile();
+  
+    const existingProductIndex = carts.products.findIndex((p) => p.product === productId);
+  
+    if (existingProductIndex !== -1) {
+      carts.products[existingProductIndex].quantity += cantidad;
+    } else {
+      const newProduct = {
+        product: productId,
+        quantity: cantidad,
       };
-
-      await fs.writeFile(this.filePath, JSON.stringify(items, null, 2));
-      return true;
+  
+      carts.products.push(newProduct);
     }
+  
+    await this.#writeFile();
+  
+    return carts;
+  }
+  
+  
+  
+  async updateProduct(carts, productId) {
+  await this.#readFile();
 
-    return false;
+  const existingProduct = carts.products.find((p) => p.product === productId);
+
+  if (!existingProduct) {
+
+    return null;
   }
 
-  async deleteProduct(id) {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
+  existingProduct.quantity++;
 
-    if (!Array.isArray(items)) {
-      items = [];
-    }
+  await this.#writeFile();
 
-    const index = items.findIndex((p) => p.id === id);
 
-    if (index === -1) {
-      throw new Error("Producto no encontrado.");
-    }
+  return existingProduct;
+  }
 
-    const updatedItems = items.filter((p) => p.id !== id);
+  async getAll() {
+    await this.#readFile();
 
-    await fs.writeFile(this.filePath, JSON.stringify(updatedItems, null, 2));
+    return this.#carts;
   }
 }
 

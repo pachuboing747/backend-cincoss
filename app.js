@@ -6,9 +6,6 @@ const handlebars = require("express-handlebars");
 const { Server } = require("socket.io");
 
 const Routes = require("./routes/index.js");
-const ProductManager = require("./managers/ProductManager.js");
-const productManager = new ProductManager("productos.json");
-const filePath = path.join(__dirname, "data", "realTimesProducts.json");
 
 
 const app = express();
