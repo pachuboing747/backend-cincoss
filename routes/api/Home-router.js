@@ -35,7 +35,7 @@ router.get("/carrito", async(req, res)=>{
 
 router.get("/realTimesProducts", async(req, res)=>{
 
-    const realTimesProducts = await realTimeManager.getProducts()
+    const realTimesProducts = await realTimeManager.getAll()
     res.render("realTimesProducts", {
         title: "RealTimesProducts",
         realTimesProducts,
@@ -43,17 +43,6 @@ router.get("/realTimesProducts", async(req, res)=>{
     })
     
 })
-router.post("/addProduct", async (req, res) => {
-    const newProduct = req.body; 
-    await realTimeManager.addProduct(newProduct); 
-    res.redirect("/realTimesProducts");  
-});
-
-router.post("/deleteProduct", async (req, res) => {
-    const productId = req.body.productId; 
-    await realTimeManager.deleteProduct(productId); 
-    res.redirect("/realTimesProducts"); 
-});
 
 
 

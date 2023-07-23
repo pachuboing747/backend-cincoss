@@ -2,50 +2,92 @@ const fs = require("fs").promises;
 const path = require("path");
 
 class RealTime {
+  #realTimesProducts = [];
+
   constructor(filename) {
     this.filename = filename;
-    this.filePath = path.join(__dirname, "../data", this.filename);
+    this.filepath = path.join(__dirname, "../data", this.filename);
   }
 
-  async addProduct(newProduct) {
-    try {
-      this.realTimesProducts.push(newProduct);
+  #readFile = async () => {
+    const data = await fs.readFile(this.filepath, "utf-8");
 
-      await fs.writeFile(this.filePath, JSON.stringify(this.realTimesProducts, null, 2));
-
-      io.emit("productAdded", newProduct);
-
-      return true;
-    } catch (error) {
-      console.error("Error al agregar el producto", error);
-      return false;
+    if (data == "") {
+      this.#realTimesProducts = [
+        "El archivo se encuentra vacío, por favor, ingrese un producto",
+      ];
+    } else {
+      this.#realTimesProducts = JSON.parse(data);
     }
+  };
+
+  #writeFile = async () => {
+    const data = JSON.stringify(this.#realTimesProducts, null, 2);
+    await fs.writeFile(this.filepath, data);
+  };
+
+  async getAll() {
+    await this.#readFile();
+
+    return this.#realTimesProducts;
   }
 
-  async getProducts() {
-    const products = await fs.readFile(this.filePath, "utf8");
-    let items = JSON.parse(products);
+  async getById(id) {
+    await this.#readFile();
 
-    if (!Array.isArray(items)) {
-      items = [];
-    }
-
-    return items;
+    return this.#realTimesProducts.find((p) => p.id == id);
   }
 
-  async deleteProducts() {
-    try {
-      this.realTimesProducts = [];
+  async create(product) {
+    await this.#readFile();
 
-      await fs.writeFile(this.filePath, JSON.stringify(this.realTimesProducts, null, 2));
+    const id = (this.#realTimesProducts[this.#realTimesProducts.length - 1]?.id || 0) + 1;
 
-      io.emit("productsDeleted");
+    const newProduct = {
+      id,
+      ...product,
+    };
 
-      return true;
-    } catch (error) {
-      console.error("Error al eliminar los productos", error);
-      return false;
+    if (
+      this.#realTimesProducts[0] ==
+      "El archivo se encuentra vacío, por favor, ingrese un producto"
+    ) {
+      this.#realTimesProducts.pop();
     }
+
+    this.#realTimesProducts.push(newProduct);
+
+    await this.#writeFile();
+
+    return newProduct;
+  }
+
+  async save(id, producto) {
+    await this.#readFile();
+
+    const existing = await this.getById(id);
+
+    if (!existing) {
+      return;
+    }
+
+    const { title, description, stock, price, keywords } = producto;
+
+    existing.title = title;
+    existing.description = description;
+    existing.stock = stock;
+    existing.price = price;
+    existing.keywords = keywords;
+
+    await this.#writeFile();
+  }
+
+  async delete(id) {
+    await this.#readFile();
+
+    this.#realTimesProducts = this.#realTimesProducts.filter((p) => p.id != id);
+
+    await this.#writeFile();
   }
 }
 
