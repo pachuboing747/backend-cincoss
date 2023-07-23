@@ -1,5 +1,4 @@
 <div id="realTimesProducts" class="uk-child-width-1-4@m" uk-grid>
-
   <form id="createProductForm">
     <label for="productName">Nombre del producto:</label>
     <input type="text" id="productName" required>
@@ -7,58 +6,78 @@
     <input type="number" id="productPrice" required>
     <button type="submit">Crear Producto</button>
     <div>
-    <button type="submit">Eliminar Productos</button>
+      <!-- Cambiar el tipo del botón a "button" y agregar event listener -->
+      <button type="button" id="deleteProductsBtn">Eliminar Productos</button>
     </div>
-   
   </form>
 
   <ul id="productList">
-  {{#each realTimesProducts}}
-  <li>Nombre: {{this.title}}, Precio: ${{this.price}}</li>
-  {{/each}}
+    {{#each realTimesProducts}}
+    <li>Nombre: {{this.title}}, Precio: ${{this.price}}</li>
+    {{/each}}
   </ul>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    async function addProduct(event) {
-      event.preventDefault();
-      const productName = document.getElementById("productName").value;
-      const productPrice = document.getElementById("productPrice").value;
+  async function addProduct(event) {
+    event.preventDefault();
+    const productName = document.getElementById("productName").value;
+    const productPrice = document.getElementById("productPrice").value;
 
-      const response = await fetch("/addProduct", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: productName,
-          price: productPrice,
-        }),
-      });
+    const response = await fetch("/addProduct", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: productName,
+        price: productPrice,
+      }),
+    });
 
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        console.error("Error al agregar el producto");
-      }
+    if (response.ok) {
+      // Si la respuesta del servidor es exitosa, llamamos a la función que actualizará la lista de productos
+      updateProductList();
+    } else {
+      console.error("Error al agregar el producto");
     }
+  }
 
-    async function deleteProducts() {
-      const response = await fetch("/deleteProducts", {
-        method: "POST",
+  async function updateProductList() {
+    const response = await fetch("/getProducts"); // Hacer una solicitud al servidor para obtener la lista de productos
+    if (response.ok) {
+      const products = await response.json();
+      const productList = document.getElementById("productList");
+      productList.innerHTML = ""; // Limpiamos la lista antes de actualizarla
+      products.forEach((product) => {
+        // Agregamos cada producto a la lista
+        const listItem = document.createElement("li");
+        listItem.textContent = `Nombre: ${product.title}, Precio: $${product.price}`;
+        productList.appendChild(listItem);
       });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        console.error("Error al eliminar los productos");
-      }
+    } else {
+      console.error("Error al obtener la lista de productos");
     }
+  }
 
-    document.getElementById("createProductForm").addEventListener("submit", addProduct);
-    {{!-- document.getElementById("deleteProductButton").addEventListener("click", deleteProducts); --}}
-  </script>
-  
-  
+  async function deleteProducts() {
+    const response = await fetch("/deleteProducts", {
+      method: "POST",
+    });
+
+    if (response.ok) {
+      // Si la respuesta del servidor es exitosa, llamamos a la función que actualizará la lista de productos
+      updateProductList();
+    } else {
+      console.error("Error al eliminar los productos");
+    }
+  }
+
+  document.getElementById("createProductForm").addEventListener("submit", addProduct);
+  document.getElementById("deleteProductsBtn").addEventListener("click", deleteProducts);
+
+  // Llamamos a la función para actualizar la lista de productos al cargar la página
+  updateProductList();
+</script>
 </div>
+
 

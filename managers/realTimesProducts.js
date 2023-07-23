@@ -89,6 +89,11 @@ class RealTime {
 
     await this.#writeFile();
   }
+
+  async deleteAll() {
+    this.#realTimesProducts = [];
+    await this.#writeFile();
+  }
 }
 
 module.exports = RealTime;

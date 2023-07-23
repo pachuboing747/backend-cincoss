@@ -6,6 +6,8 @@ const handlebars = require("express-handlebars");
 const { Server } = require("socket.io");
 
 const Routes = require("./routes/index.js");
+const realTimesProductsRouter = require("./routes/api/RealTime-router.js"); 
+const RealTime = require("./managers/realTimesProducts");
 
 
 const app = express();
@@ -21,19 +23,9 @@ app.use(express.json());
 app.use("/public", express.static(path.join(__dirname + "/public")));
 
 app.use("/", Routes.home);
+app.use("/realTimesProducts", realTimesProductsRouter)
 
-app.get("/realTimesProducts", async (req, res) => {
-  try {
-    const data = await fs.readFile(path.join(__dirname, "data", "realTimesProducts.json"), "utf-8");
-    const realTimesProducts = JSON.parse(data);
-
-    res.render("realTimesProducts", { realTimesProducts });
-  } catch (error) {
-    console.error("Error al leer el archivo", error);
-    res.status(500).json({ error: "Error al obtener la lista de productos" });
-  }
-});
-
+const realTime = new RealTime("realTimesProducts.json");
 
 
 io.on("connection", (socket) => {
@@ -48,12 +40,15 @@ io.on("connection", (socket) => {
     socket.emit("evento", "hola desde el server");
   });
 
-  socket.on("productAdded", () => {
-    io.emit("realTimesProducts", realTime.getProducts());
+  socket.on("productAdded", async () => {
+    const products = await realTime.getAll();
+    io.emit("realTimesProducts", products);
   });
 
-  socket.on("productsDeleted", () => {
-    io.emit("realTimesProducts", []);
+  socket.on("productsDeleted", async () => {
+    await realTime.deleteAll();
+    const products = await realTime.getAll();
+    io.emit("realTimesProducts", products);
   });
 
   
