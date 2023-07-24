@@ -2,8 +2,8 @@ const { Router } = require("express")
 
 const RealTime = require("../../managers/realTimesProducts");
 const realTime = new RealTime("realTimesProducts.json");
-const router = Router();
 
+const router = Router();
 
 router.post("/addProduct", async (req, res) => {
     const { title, price } = req.body;
@@ -15,6 +15,16 @@ router.post("/addProduct", async (req, res) => {
       console.error("Error al agregar el producto:", error);
       res.sendStatus(500);
     }
+});
+
+router.get("/getProducts", async (req, res) => {
+  try {
+    const products = await realTime.getAll();
+    res.json(products);
+  } catch (error) {
+    console.error("Error al obtener la lista de productos:", error);
+    res.sendStatus(500);
+  }
 });
 
 

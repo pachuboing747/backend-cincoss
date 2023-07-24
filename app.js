@@ -35,22 +35,6 @@ io.on("connection", (socket) => {
     console.log("usuario desconectdo");
   });
 
-  socket.on("event", (saludo) => {
-    console.log(saludo);
-    socket.emit("evento", "hola desde el server");
-  });
-
-  socket.on("productAdded", async () => {
-    const products = await realTime.getAll();
-    io.emit("realTimesProducts", products);
-  });
-
-  socket.on("productsDeleted", async () => {
-    await realTime.deleteAll();
-    const products = await realTime.getAll();
-    io.emit("realTimesProducts", products);
-  });
-
   
 });
 
