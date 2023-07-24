@@ -53,13 +53,13 @@ router.post('/:cid/product/:pid', async (req, res) => {
       
         cart.products[existingProductIndex].quantity++;
       } else {
-        
+    
         const newProductId = cart.products.length + 1;
         const newProduct = { id: newProductId, product: pid, quantity: 1 };
         cart.products.push(newProduct);
       }
     } else {
-    
+      
       const newProduct = { id: 1, product: pid, quantity: 1 };
       const newCart = { cid, products: [newProduct] };
       cartList.push(newCart);
